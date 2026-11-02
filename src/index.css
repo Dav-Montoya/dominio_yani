@@ -1,0 +1,63 @@
+/* index.css: acá puse los estilos que usa toda la tienda (colores, fondo y botones) */
+@import "tailwindcss";
+
+/* acá definí mi paleta: son los mismos rosados de mi style.css de antes,
+   y Tailwind crea solo clases como bg-rosa-300 o text-rosa-500 a partir de esto */
+@theme {
+  --color-rosa-50: #fff5f8;
+  --color-rosa-100: #ffe0ec;
+  --color-rosa-200: #ffc9de;
+  --color-rosa-300: #ff8fb1; /* el rosado del menú */
+  --color-rosa-400: #ff6b9d;
+  --color-rosa-500: #d63384; /* el rosado de los títulos */
+  /* acá agregué los celestes de la identidad maid (se usan poquito: línea de tiempo y detalles) */
+  --color-celeste-100: #e4f4fd;
+  --color-celeste-300: #9fd6f2;
+  --color-celeste-500: #2f86b5;
+  --color-ciruela: #4a2a3a; /* color del texto, más suave que el negro */
+  --font-sans: "Nunito", ui-rounded, "Segoe UI", Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply m-0 font-sans text-ciruela;
+    /* acá puse mi fondo de listones y encaje; el color rosado se ve mientras carga la imagen.
+       (en el proyecto anterior la ruta estaba mal escrita y el fondo nunca se veía) */
+    background-color: #ffb6d0;
+    background-image: url("/imgs/fondo.webp");
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+  }
+  a {
+    @apply no-underline;
+  }
+}
+
+@layer components {
+  /* acá hice la caja blanca suavecita que uso para tarjetas, formularios y tablas */
+  .panel {
+    @apply rounded-3xl border border-rosa-200 bg-white/90 p-5 shadow-lg shadow-rosa-300/20 backdrop-blur-sm;
+  }
+  /* acá hice el botón rosado redondito que uso en toda la tienda */
+  .boton {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-0 bg-rosa-300 px-5 py-2 text-sm font-bold text-white shadow-md shadow-rosa-300/40 transition hover:-translate-y-0.5 hover:bg-rosa-500 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0;
+  }
+  /* acá hice la versión blanca con borde, para acciones secundarias */
+  .boton-suave {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-rosa-200 bg-white px-5 py-2 text-sm font-bold text-rosa-500 transition hover:-translate-y-0.5 hover:bg-rosa-100;
+  }
+  /* acá puse el estilo de las cajas de escribir (input, select y textarea) */
+  .entrada {
+    @apply w-full rounded-xl border-2 border-rosa-200 bg-white px-3 py-2 text-sm text-ciruela outline-none transition focus:border-rosa-300 focus:ring-4 focus:ring-rosa-100;
+  }
+}
+
+/* acá apago las animaciones si la persona pidió "menos movimiento" en su dispositivo */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
