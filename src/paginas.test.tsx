@@ -15,6 +15,7 @@ const casos: [string, string, string][] = [
   ["/eventos", "", "Tokyo Maid Expo"],
   ["/productos", "", "Nuestra Merch"],
   ["/login", "", "Iniciar sesión"],
+  ["/cuenta", "", "Iniciar sesión"], // sin sesión, mi cuenta muestra el login
   ["/register", "", "Crear cuenta nueva"],
   ["/contacto", "", "Síguenos"],
   ["/carrito", "", "carrito"],

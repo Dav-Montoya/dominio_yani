@@ -28,7 +28,7 @@ export const crearPedido = async (items: IntentoPedido[]): Promise<Pedido> => {
       body: JSON.stringify({ items }),
     });
   } catch {
-    throw new ApiError("SIN_CONEXION", "No se pudo conectar con el backend: revisa que fs2-api esté corriendo.");
+    throw new ApiError("SIN_CONEXION", "No pudimos conectar con la tienda. Ya volvemos: inténtalo de nuevo en unos minutos.");
   }
 
   type CuerpoPedido = { success?: boolean; data?: Pedido; error?: string; mensaje?: string; message?: string };
@@ -36,7 +36,7 @@ export const crearPedido = async (items: IntentoPedido[]): Promise<Pedido> => {
   try {
     cuerpo = (await respuesta.json()) as CuerpoPedido;
   } catch {
-    throw new ApiError("SIN_JSON", "El servidor respondió en un formato inesperado.");
+    throw new ApiError("SIN_JSON", "Hubo un problema al registrar tu pedido. Inténtalo de nuevo.");
   }
 
   if (!respuesta.ok || !cuerpo?.success) {

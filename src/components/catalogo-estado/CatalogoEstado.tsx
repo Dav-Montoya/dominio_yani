@@ -12,7 +12,7 @@ const CatalogoEstado = ({ cargando, error, vacio }: CatalogoEstadoProps) => {
   if (cargando) {
     return (
       <div role="status" className="panel mx-auto my-6 max-w-lg text-center">
-        <p className="font-bold">Cargando el catálogo del backend… 🛍️</p>
+        <p className="font-bold">Cargando el catálogo… 🛍️</p>
         <p className="mt-2 text-sm">Espere por favor .</p>
       </div>
     );

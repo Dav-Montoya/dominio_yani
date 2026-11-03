@@ -6,7 +6,7 @@
 //  - El navegador NUNCA se conecta directo a AWS Cognito: eso queda del lado del backend.
 //  - MODO LOCAL (sin .env): deja la cuenta en LocalStorage como la demo de antes.
 import { useState, type FormEvent } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import Field from "../../components/field/Field";
 import Mensaje, { type MensajeForm } from "../../components/mensaje/Mensaje";
 import PageTitle from "../../components/page-title/PageTitle";
@@ -14,7 +14,7 @@ import { entorno } from "../../config/entorno";
 import api, { type RegisterCredentials } from "../../services/api";
 import { comunasPorRegion, regiones } from "../../data/regiones";
 import { formatearRun, validarRun } from "../../utils/run";
-import { registrarUsuario } from "../../utils/storage";
+import { anotarCuentaCreada, registrarUsuario } from "../../utils/storage";
 import {
   hayErrores, validarApellidos, validarCorreo, validarDireccion, validarNacimiento, validarNombre,
   validarPassword, validarSeleccion,
@@ -33,6 +33,16 @@ const tiposUsuario = [
 const Register = () => {
   // demo local solo si NO hay backend configurado
   const cognitoOff = !entorno.apiUrl;
+  // irA("/login") manda a la persona directo al login cuando la cuenta quedó lista
+  const [, irA] = useLocation();
+
+  // flujo del punto 2 de las mejoras: la cuenta quedó creada Y confirmada ->
+  // dejo anotado el correo (el login lo muestra en el recuadro de confirmación)
+  // y voy directo al apartado de inicio de sesión.
+  const cuentaListaIrAlLogin = (correo: string) => {
+    anotarCuentaCreada(correo.trim().toLowerCase());
+    irA("/login");
+  };
 
   const [datos, setDatos] = useState(vacio);
   const [errores, setErrores] = useState(vacio); // mismos campos, pero con los textos de error
@@ -88,9 +98,8 @@ const Register = () => {
         setMensaje({ tipo: "fallo", texto: problema });
         return;
       }
-      setMensaje({ tipo: "exito", texto: "¡Cuenta creada con éxito! Ya puedes iniciar sesión." });
-      setCreada(true);
-      setDatos(vacio);
+      // demo local: la cuenta ya quedó lista -> directo al login con el recuadro
+      cuentaListaIrAlLogin(datos.correo);
       return;
     }
 
@@ -121,6 +130,8 @@ const Register = () => {
       setMensaje({ tipo: "exito", texto: "¡Cuenta creada con éxito! Ya puedes iniciar sesión." });
       setCreada(true);
       setDatos(vacio); // limpio el formulario
+      // no hubo verificación pendiente: la cuenta ya está lista -> directo al login
+      cuentaListaIrAlLogin(credenciales.email);
     } catch (problema) {
       setMensaje({
         tipo: "fallo",
@@ -141,11 +152,8 @@ const Register = () => {
     setEnviando(true);
     try {
       await api.confirmarRegistro(verificar ?? datos.correo.trim(), codigo.trim());
-      setMensaje({ tipo: "exito", texto: "¡Cuenta verificada! Ya puedes iniciar sesión." });
-      setCreada(true);
-      setVerificar(null);
-      setCodigo("");
-      setDatos(vacio);
+      // el código confirmó la cuenta: acá también me voy directo al login con el recuadro
+      cuentaListaIrAlLogin(verificar ?? datos.correo.trim());
     } catch (problema) {
       setMensaje({ tipo: "fallo", texto: problema instanceof Error ? problema.message : "No se pudo verificar." });
     } finally {

@@ -10,6 +10,7 @@ import type { Producto } from "./data/productos";
 import { useProductos } from "./hooks/useProductos";
 import Carrito from "./pages/carrito/Carrito";
 import Contacto from "./pages/contacto/Contacto";
+import Cuenta from "./pages/cuenta/Cuenta";
 import Eventos from "./pages/eventos/Eventos";
 import Historia from "./pages/historia/Historia";
 import Home from "./pages/home/Home";
@@ -59,7 +60,7 @@ function App() {
           {/* avisos de Cognito (solo aparecen en modo cognito si algo falla o está cargando) */}
           {error && (
             <p role="alert" className="panel mx-auto mb-4 max-w-6xl border-rosa-400 font-semibold text-rosa-500">
-              No se pudo iniciar sesión con Cognito: {error}
+              No pudimos iniciar sesión. Ya volvemos: inténtalo de nuevo.
             </p>
           )}
           {cargando && <p className="mx-auto mb-4 max-w-6xl font-semibold">Revisando tu sesión…</p>}
@@ -89,6 +90,10 @@ function App() {
             </Route>
             <Route path="/login">
               <Login onLogin={iniciarLocal} />
+            </Route>
+            {/* mi cuenta (punto 4): si nadie inició sesión, muestro el login */}
+            <Route path="/cuenta">
+              {sesion ? <Cuenta sesion={sesion} /> : <Login onLogin={iniciarLocal} />}
             </Route>
             <Route path="/register" component={Register} />
             <Route path="/contacto" component={Contacto} />

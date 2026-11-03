@@ -4,7 +4,7 @@
 
 // acá puse los dominios de correo permitidos.
 // (En mi validaciones.js de antes esta lista nunca se había creado, por eso fallaba la validación del correo.)
-export const DOMINIOS_PERMITIDOS = ["duoc.cl", "profesor.duoc.cl", "gmail.com"];
+export const DOMINIOS_PERMITIDOS = ["duoc.cl", "profesor.duoc.cl", "gmail.com", "yopmail.com", "hotmail.com", "outlook.com", "outlook.cl"];
 
 export const validarCorreo = (correo: string): string => {
   const valor = correo.trim();
@@ -33,7 +33,7 @@ export const validarClave = (clave: string): string => {
 export const validarPassword = (clave: string): string => {
   if (!clave) return "La contraseña es obligatoria.";
   if (clave.length < 8 || clave.length > 64) {
-    return "La contraseña debe tener entre 8 y 64 caracteres (mínimo del backend).";
+    return "La contraseña debe tener entre 8 y 64 caracteres.";
   }
   if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9])/.test(clave)) {
     return "La contraseña debe incluir mayúscula, minúscula, número y símbolo (ej: Clave1234#).";

@@ -7,6 +7,8 @@ import type { ItemCarrito } from "./carrito";
 const CLAVE_CARRITO = "ssm_carrito";
 const CLAVE_USUARIOS = "ssm_usuarios";
 const CLAVE_SESION = "ssm_sesion";
+// aviso de "cuenta creada" entre el registro y el login (punto 2 de las mejoras)
+const CLAVE_CUENTA_CREADA = "ssm_cuenta_creada";
 
 export interface Usuario {
   run: string;
@@ -63,6 +65,31 @@ export const borrarSesion = (): void => {
 };
 
 export const leerUsuarios = (): Usuario[] => leer<Usuario[]>(CLAVE_USUARIOS, []);
+
+// ---------- Aviso de "cuenta creada" (registro -> login) ----------
+// El registro deja acá el correo de la cuenta recién creada y va directo a /login;
+// el login LO LEYÓ UNA SOLA VEZ (borrándolo) y muestra el recuadro de confirmación.
+
+// lo que anoto cuando la cuenta quedó correctamente creada/confirmada
+export interface CuentaCreada {
+  correo: string;
+}
+
+export const anotarCuentaCreada = (correo: string): void => {
+  const ok = guardar(CLAVE_CUENTA_CREADA, { correo } satisfies CuentaCreada);
+  if (!ok) return; // si el navegador bloquea el guardado, el login simplemente no muestra el recuadro
+};
+
+// lo lee el login: devuelve el aviso (o null) y SIEMPRE lo borra, así no se repite al recargar
+export const leerYBorrarCuentaCreada = (): CuentaCreada | null => {
+  const datos = leer<CuentaCreada | null>(CLAVE_CUENTA_CREADA, null);
+  try {
+    localStorage.removeItem(CLAVE_CUENTA_CREADA);
+  } catch {
+    /* si no se puede borrar, igual ya lo leímos */
+  }
+  return datos;
+};
 
 // devuelve "" si salió bien, o el mensaje del problema (por ejemplo, correo o RUN repetido)
 export const registrarUsuario = (usuario: Usuario): string => {

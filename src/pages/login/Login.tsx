@@ -12,7 +12,7 @@ import PageTitle from "../../components/page-title/PageTitle";
 import api, { type LoginCredentials } from "../../services/api";
 import { entorno } from "../../config/entorno";
 import { iniciarSesion } from "../../utils/auth";
-import { guardarSesion, type Sesion } from "../../utils/storage";
+import { guardarSesion, leerYBorrarCuentaCreada, type Sesion } from "../../utils/storage";
 import { hayErrores, validarCorreo, validarPassword } from "../../utils/validators";
 
 interface LoginProps {
@@ -39,14 +39,24 @@ const Login = ({ onLogin }: LoginProps) => {
   const [mensaje, setMensaje] = useState<MensajeForm | null>(null);
   const [enviando, setEnviando] = useState(false);
   // vista extra cuando el backend responde con algo más que tokens:
-  // "nueva-clave" (clave temporal) o "verificar" (cuenta sin confirmar con el código del correo)
-  const [vista, setVista] = useState<"normal" | "nueva-clave" | "verificar">("normal");
+  // "nueva-clave" (clave temporal), "verificar" (cuenta sin confirmar con el código del correo)
+  // y las dos del punto 1 de las mejoras: "olvide" (pedir el código) y "olvide-codigo" (código + clave nueva)
+  const [vista, setVista] = useState<"normal" | "nueva-clave" | "verificar" | "olvide" | "olvide-codigo">("normal");
   const [sesionPendiente, setSesionPendiente] = useState<{ email: string; session?: string } | null>(null);
+  // recuadro del punto 2: si llegué desde el registro con la cuenta recién creada,
+  // el registro anotó el correo y acá lo muestro una sola vez
+  const [cuentaCreada, setCuentaCreada] = useState<string | null>(null);
   const [, irA] = useLocation(); // irA("/") cambia de página desde el código
   // acá guardo el temporizador del redireccionamiento para poder cancelarlo si me voy de la página antes
   const temporizador = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => () => clearTimeout(temporizador.current), []);
+
+  useEffect(() => {
+    // leo el aviso que dejó el registro (y lo borro), así el recuadro no reaparece al recargar
+    const aviso = leerYBorrarCuentaCreada();
+    if (aviso) setCuentaCreada(aviso.correo);
+  }, []);
 
   // MODO LOCAL (demo): sin backend configurado, la sesión queda en el navegador
   const demoLocal = !entorno.apiUrl;
@@ -158,6 +168,61 @@ const Login = ({ onLogin }: LoginProps) => {
     }
   };
 
+  // ---------- OLVIDÉ MI CONTRASEÑA (punto 1 de las mejoras) ----------
+  // paso 1: pido el código de recuperación con el correo de la cuenta
+  const handleOlvide = async (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    const errorCorreo = validarCorreo(correo);
+    setErrores({ correo: errorCorreo, clave: "" });
+    if (errorCorreo) {
+      setMensaje({ tipo: "fallo", texto: "Escribe el correo de tu cuenta para enviarte el código." });
+      return;
+    }
+    if (demoLocal) {
+      setMensaje({
+        tipo: "fallo",
+        texto: "No pudimos enviar el código ahora. Ya volvemos: inténtalo más tarde.",
+      });
+      return;
+    }
+    setEnviando(true);
+    try {
+      await api.solicitarRecuperacionContrasena(correo.trim());
+      setMensaje({ tipo: "exito", texto: "Te mandamos un código de recuperación al correo. Escríbelo junto a tu clave nueva." });
+      setVista("olvide-codigo");
+    } catch (problema) {
+      setMensaje({ tipo: "fallo", texto: problema instanceof Error ? problema.message : "No se pudo enviar el código." });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  // paso 2: confirmo el código + la contraseña nueva (misma política que al registrarse)
+  const handleOlvideConfirmar = async (evento: FormEvent<HTMLFormElement>) => {
+    evento.preventDefault();
+    if (!codigo.trim()) {
+      setMensaje({ tipo: "fallo", texto: "Escribe el código que te llegó al correo." });
+      return;
+    }
+    const errorClave = validarPassword(claveNueva);
+    if (errorClave) {
+      setMensaje({ tipo: "fallo", texto: errorClave });
+      return;
+    }
+    setEnviando(true);
+    try {
+      await api.confirmarRecuperacionContrasena(correo.trim(), codigo.trim(), claveNueva);
+      setMensaje({ tipo: "exito", texto: "¡Contraseña actualizada! Ahora inicia sesión con tu clave nueva." });
+      setVista("normal");
+      setCodigo("");
+      setClaveNueva("");
+    } catch (problema) {
+      setMensaje({ tipo: "fallo", texto: problema instanceof Error ? problema.message : "No se pudo cambiar la contraseña." });
+    } finally {
+      setEnviando(false);
+    }
+  };
+
   // ---- vista de verificación (código al correo) ----
   if (vista === "verificar") {
     return (
@@ -207,10 +272,86 @@ const Login = ({ onLogin }: LoginProps) => {
     );
   }
 
+  // ---- vista del olvido, paso 1: pido el correo para mandar el código ----
+  if (vista === "olvide") {
+    return (
+      <div className="mx-auto max-w-xl">
+        <PageTitle subtitulo="Escribe el correo de tu cuenta y te mandamos un código para crear tu contraseña nueva.">
+          Olvidé mi contraseña
+        </PageTitle>
+        <Mensaje mensaje={mensaje} />
+        <form onSubmit={handleOlvide} noValidate className="panel p-6">
+          <Field
+            id="olvide-correo" label="Correo electrónico de tu cuenta" type="email" value={correo}
+            onChange={setCorreo} error={errores.correo} placeholder="nombre@duoc.cl" autoComplete="email" maxLength={100}
+          />
+          <div className="flex flex-wrap items-center gap-4">
+            <button type="submit" className="boton" disabled={enviando}>
+              {enviando ? "Enviando…" : "Enviar código"}
+            </button>
+            <button
+              type="button" className="boton-suave"
+              onClick={() => { setVista("normal"); setMensaje(null); }}
+            >
+              Volver al inicio de sesión
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // ---- vista del olvido, paso 2: código + contraseña nueva ----
+  if (vista === "olvide-codigo") {
+    return (
+      <div className="mx-auto max-w-xl">
+        <PageTitle subtitulo="Escribe el código que te llegó al correo y tu contraseña nueva (misma política del registro).">
+          Crear contraseña nueva
+        </PageTitle>
+        <Mensaje mensaje={mensaje} />
+        <form onSubmit={handleOlvideConfirmar} noValidate className="panel p-6">
+          <Field
+            id="olvide-codigo" label="Código de recuperación" value={codigo} onChange={setCodigo}
+            maxLength={10} placeholder="XXXXXX"
+            ayuda="Revisa tu correo (también en spam). El código confirma que la cuenta es tuya."
+          />
+          <Field
+            id="olvide-clave-nueva" label="Contraseña nueva" type="password" value={claveNueva}
+            onChange={setClaveNueva} autoComplete="new-password" maxLength={64}
+            ayuda="Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo (ej: Clave1234#)."
+          />
+          <div className="flex flex-wrap items-center gap-4">
+            <button type="submit" className="boton" disabled={enviando}>
+              {enviando ? "Guardando…" : "Guardar contraseña"}
+            </button>
+            <button
+              type="button" className="boton-suave"
+              onClick={() => { setVista("normal"); setMensaje(null); }}
+            >
+              Volver al inicio de sesión
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
   // ---- vista normal ----
   return (
     <div className="mx-auto max-w-xl">
       <PageTitle>Iniciar sesión</PageTitle>
+
+      {/* recuadro del punto 2: el registro me mandó acá con la cuenta recién creada/confirmada */}
+      {cuentaCreada && (
+        <div role="status" className="mb-4 rounded-2xl border border-emerald-600 bg-emerald-50 p-4 text-emerald-800">
+          <p className="text-sm font-extrabold">✅ ¡Cuenta creada con éxito!</p>
+          <p className="text-sm">
+            La cuenta <span className="font-extrabold">{cuentaCreada}</span> ya quedó registrada y confirmada.{" "}
+            Inicia sesión con tu contraseña para entrar.
+          </p>
+        </div>
+      )}
+
       <Mensaje mensaje={mensaje} />
 
       <form onSubmit={handleSubmit} noValidate className="panel p-6">
@@ -222,9 +363,19 @@ const Login = ({ onLogin }: LoginProps) => {
           id="login-clave" label="Contraseña" type="password" value={clave} onChange={setClave}
           error={errores.clave} autoComplete="current-password" maxLength={64}
         />
-        <button type="submit" className="boton" disabled={enviando}>
-          {enviando ? "Entrando…" : "Ingresar"}
-        </button>
+        {/* C_textos/botones: "Ingresar" junto a "¿Olvidaste tu contraseña?", separados con el hueco (gap) */}
+        <div className="flex flex-wrap items-center gap-4">
+          <button type="submit" className="boton" disabled={enviando}>
+            {enviando ? "Entrando…" : "Ingresar"}
+          </button>
+          <button
+            type="button"
+            className="text-sm font-bold text-rosa-500 underline"
+            onClick={() => { setVista("olvide"); setMensaje(null); }}
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
       </form>
 
       <p className="mt-4 font-semibold">

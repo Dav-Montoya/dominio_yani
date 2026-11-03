@@ -80,6 +80,10 @@ const Menu = ({ sesion, cantidadCarrito, onLogout }: MenuProps) => {
           <div className="text-center">
             <p className="text-sm font-bold">Hola, {sesion.nombre}</p>
             <p className="mb-3 text-xs">{sesion.rol === "Admin" ? "Administrador/a" : "Cliente"}</p>
+            {/* mi cuenta (punto 4 de las mejoras): última compra y edición de mis datos */}
+            <Link href="/cuenta" onClick={cerrar} className="boton-suave mb-2 block w-full no-underline">
+              Mi cuenta
+            </Link>
             <button
               type="button"
               className="boton-suave w-full"

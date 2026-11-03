@@ -23,7 +23,7 @@ const EstadoServidor = () => {
 
   if (!entorno.apiUrl) return null;
 
-  const texto = { revisando: "Revisando servidor…", conectado: "Servidor conectado", "sin-conexion": "Servidor sin conexión" }[estado];
+  const texto = { revisando: "Revisando conexión…", conectado: "Conectado", "sin-conexion": "Sin conexión" }[estado];
   return (
     <span className="ml-2 inline-block rounded-full bg-celeste-100 px-3 py-0.5 text-xs font-bold text-celeste-500" role="status">
       {texto}

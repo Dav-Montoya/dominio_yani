@@ -57,6 +57,38 @@ export interface RegisterCredentials extends LoginCredentials {
   direccion?: string;
 }
 
+// mi cuenta: los datos que devuelve el backend (GET /api/usuarios/mi)
+export interface Perfil {
+  id: string;
+  email: string;
+  nombre: string;
+  roles: string[];
+  run?: string | null;
+  apellidos?: string | null;
+  fechaNacimiento?: string | null;
+  tipoUsuario?: string | null;
+  region?: string | null;
+  comuna?: string | null;
+  direccion?: string | null;
+}
+
+// mi cuenta: una línea de la compra (qué producto, cuánto cuesta cada uno y cuántos)
+export interface LineaPedido {
+  codigoProducto: string;
+  nombre: string;
+  precioUnitario: number;
+  cantidad: number;
+}
+
+// mi cuenta: la compra completa (fecha ISO, estado, total y sus líneas)
+export interface PedidoDetalle {
+  id: number;
+  fecha: string;
+  estado: string;
+  total: number;
+  lineas: LineaPedido[];
+}
+
 interface RespuestaError {
   error?: string;
   mensaje?: string;
@@ -136,7 +168,7 @@ const pedir = async <T,>(ruta: string, init: RequestInit = {}): Promise<T> => {
   }
   if (!respuesta.ok || cuerpo?.success === false) {
     const err = cuerpo as unknown as RespuestaError | null;
-    throw new ApiError(err?.error ?? "ERROR", err?.message || err?.mensaje || `El servidor respondió con error ${respuesta.status}`);
+    throw new ApiError(err?.error ?? "ERROR", err?.message || err?.mensaje || "No pudimos completar tu solicitud. Inténtalo de nuevo.");
   }
   return cuerpo?.data as T;
 };
@@ -191,6 +223,58 @@ const api = {
       body: JSON.stringify({ email }),
     });
   },
+
+  // ---------- OLVIDÉ MI CONTRASEÑA (2 pasos, el código llega al correo) ----------
+  // paso 1: pide el código de recuperación al correo de la cuenta
+  async solicitarRecuperacionContrasena(email: string): Promise<void> {
+    await pedir<void>("/auth/olvide-contrasena/solicitar", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  // paso 2: confirma el código + la contraseña nueva (misma política del registro)
+  async confirmarRecuperacionContrasena(email: string, codigo: string, nuevaContrasena: string): Promise<void> {
+    await pedir<void>("/auth/olvide-contrasena/confirmar", {
+      method: "POST",
+      body: JSON.stringify({ email, codigo, nuevaContrasena }),
+    });
+  },
+
+  // ---------- MI CUENTA (apartado propio del usuario con sesión) ----------
+  // mi perfil: corre, nombre, run, región/comuna, dirección, etc.
+  miPerfil: () => pedir<Perfil>("/usuarios/mi"),
+
+  // cambia dirección (+ región y comuna opcionales) del perfil (el backend lo guarda en su base)
+  actualizarDireccion: (datos: { direccion: string; region?: string; comuna?: string }) =>
+    pedir<Perfil>("/usuarios/direccion", { method: "PATCH", body: JSON.stringify(datos) }),
+
+  // cambia la contraseña: Cognito pide la ACTUAL y valida la nueva con su política
+  cambiarContrasena: (contrasenaActual: string, nuevaContrasena: string) =>
+    pedir<void>("/usuarios/cambiar-contrasena", {
+      method: "POST",
+      body: JSON.stringify({ contrasenaActual, nuevaContrasena }),
+    }),
+
+  // cambio de correo PASO 1: pidimos la CONTRASEÑA ACTUAL (el backend la valida en
+  // Cognito para comprobar que eres tú) y después Cognito manda un código al correo NUEVO
+  // (si el User Pool no lo permite, el backend avisa con error)
+  solicitarCambioCorreo: (nuevoCorreo: string, contrasenaActual: string) =>
+    pedir<void>("/usuarios/cambiar-correo/solicitar", {
+      method: "POST",
+      body: JSON.stringify({ nuevoCorreo, contrasenaActual }),
+    }),
+
+  // cambio de correo PASO 2: confirmo el código y el correo queda cambiado
+  confirmarCambioCorreo: (nuevoCorreo: string, codigo: string) =>
+    pedir<void>("/usuarios/cambiar-correo/confirmar", {
+      method: "POST",
+      body: JSON.stringify({ nuevoCorreo, codigo }),
+    }),
+
+  // mis compras (el backend las ordena de la más reciente a la más antigua):
+  // la primera de la lista es la "última compra" para Mi cuenta
+  misPedidos: () => pedir<PedidoDetalle[]>("/pedidos/mios"),
 
   register: (credenciales: RegisterCredentials) =>
     pedir<User>("/auth/registro", { method: "POST", body: JSON.stringify(credenciales) }),

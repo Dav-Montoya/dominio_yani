@@ -25,7 +25,7 @@ export const enviarMensajeContacto = async (mensaje: MensajeContacto): Promise<v
       body: JSON.stringify(mensaje),
     });
   } catch {
-    throw new Error("No se pudo conectar con el servidor. Revisa tu conexión.");
+    throw new Error("No pudimos enviar tu mensaje. Revisa tu conexión e inténtalo de nuevo.");
   }
 
   type CuerpoContacto = { success?: boolean; message?: string; mensaje?: string };
@@ -33,7 +33,7 @@ export const enviarMensajeContacto = async (mensaje: MensajeContacto): Promise<v
   try {
     cuerpo = (await respuesta.json()) as CuerpoContacto;
   } catch {
-    throw new Error("El servidor respondió en un formato inesperado.");
+    throw new Error("No pudimos enviar tu mensaje. Inténtalo más tarde.");
   }
 
   if (!respuesta.ok || !cuerpo?.success) {

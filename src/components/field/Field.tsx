@@ -62,6 +62,10 @@ const Field = ({
       ) : multilinea ? (
         <textarea
           {...comunes}
+          // caja de tamaño FIJO: resize-none le quita el tirador de la esquina,
+          // así el usuario no la agranda ni la achica; si el texto no entra,
+          // el navegador muestra la scroll bar normal y no deforma el panel
+          className={`${comunes.className} resize-none`}
           rows={5}
           maxLength={maxLength}
           placeholder={placeholder}

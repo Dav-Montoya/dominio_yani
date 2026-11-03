@@ -44,7 +44,7 @@ export const useProductos = (): EstadoProductos => {
         const lista = await listarProductos();
         if (vivo) setProductos(lista);
       } catch (problema) {
-        if (vivo) setError(problema instanceof Error ? problema.message : "No se pudo cargar el catálogo.");
+        if (vivo) setError(problema instanceof Error ? problema.message : "No pudimos cargar los productos. Ya volvemos.");
       } finally {
         if (vivo) setCargando(false);
       }

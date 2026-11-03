@@ -9,11 +9,12 @@ describe("validarCorreo", () => {
     expect(validarCorreo("ana@duoc.cl")).toBe("");
     expect(validarCorreo("profe@profesor.duoc.cl")).toBe("");
     expect(validarCorreo("admin@gmail.com")).toBe("");
+    expect(validarCorreo("ana@hotmail.com")).toBe(""); // hotmail se agregó a la lista de dominios permitidos
   });
   it("rechaza vacío, mal formato, otro dominio y más de 100 caracteres", () => {
     expect(validarCorreo("")).not.toBe("");
     expect(validarCorreo("ana@@duoc")).not.toBe("");
-    expect(validarCorreo("ana@hotmail.com")).not.toBe("");
+    expect(validarCorreo("ana@dominio-no-permitido.net")).not.toBe("");
     expect(validarCorreo("a".repeat(100) + "@gmail.com")).not.toBe("");
   });
 });

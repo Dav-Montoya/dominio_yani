@@ -51,6 +51,22 @@
   .entrada {
     @apply w-full rounded-xl border-2 border-rosa-200 bg-white px-3 py-2 text-sm text-ciruela outline-none transition focus:border-rosa-300 focus:ring-4 focus:ring-rosa-100;
   }
+
+  /* C_textos: encabezado de página. Un halo blanco muy suave ("resplandor") levanta
+     el título del fondo de listones SIN agregar cajas ni colores extra; sigue siendo
+     el mismo rosa-500, solo se ve más firme porque el fondo claro lo respalda. */
+  .titulo-pagina {
+    text-shadow:
+      0 1px 0 rgba(255, 245, 248, 0.95),
+      0 3px 12px rgba(255, 245, 248, 0.9);
+  }
+
+  /* C_textos: subtitulo de página. Píldora translúcida rosa muy claro (80%):
+     separa la frase del fondo difuminado igual que hacen los .panel, pero sutil
+     (sin borde fuerte ni sombra dura), así no compite con los formularios. */
+  .subtitulo-pagina {
+    @apply inline-block max-w-2xl rounded-2xl bg-rosa-50/80 px-3 py-1.5 font-semibold text-ciruela shadow-sm;
+  }
 }
 
 /* acá apago las animaciones si la persona pidió "menos movimiento" en su dispositivo */

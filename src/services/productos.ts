@@ -13,7 +13,7 @@ export const listarProductos = async (): Promise<Producto[]> => {
   const tipo: unknown = await respuesta.json().catch(() => null);
   cuerpo = tipo as { success?: boolean; data?: unknown } | null;
   if (!respuesta.ok || !cuerpo?.success || !Array.isArray(cuerpo.data)) {
-    throw new ApiError("CATALOGO_FALLIDO", "No se pudo cargar el catálogo del backend.");
+    throw new ApiError("CATALOGO_FALLIDO", "No pudimos cargar los productos. Ya volvemos.");
   }
   return cuerpo.data as Producto[];
 };
