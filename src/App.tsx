@@ -23,6 +23,10 @@ import Register from "./pages/register/Register";
 import { agregarItem, cambiarCantidad, contarUnidades, quitarItem, type ItemCarrito } from "./utils/carrito";
 import { useSesion } from "./hooks/useSesion";
 import { guardarCarrito, leerCarrito } from "./utils/storage";
+import Admin from "./pages/admin/Admin";
+import AdminProductos from "./pages/admin/AdminProductos";
+import AdminMensajes from "./pages/admin/AdminMensajes";
+import RequiereAdmin from "./components/admin/RequiereAdmin";
 
 function App() {
   // acá arranco con lo que haya guardado en el navegador, así no se pierde al recargar
@@ -97,6 +101,23 @@ function App() {
             </Route>
             <Route path="/register" component={Register} />
             <Route path="/contacto" component={Contacto} />
+            {/* mantenedores (los 2 mantenedores del proyecto): RequiereAdmin revisa
+                la sesión y solo deja entrar a quien tenga rol Admin */}
+            <Route path="/admin">
+              <RequiereAdmin sesion={sesion}>
+                <Admin />
+              </RequiereAdmin>
+            </Route>
+            <Route path="/admin/productos">
+              <RequiereAdmin sesion={sesion}>
+                <AdminProductos />
+              </RequiereAdmin>
+            </Route>
+            <Route path="/admin/mensajes">
+              <RequiereAdmin sesion={sesion}>
+                <AdminMensajes />
+              </RequiereAdmin>
+            </Route>
             {/* esta Route sin "path" atrapa cualquier dirección que no exista (página 404) */}
             <Route component={NotFound} />
           </Switch>

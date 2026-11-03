@@ -1,14 +1,14 @@
 // services/productos.ts: acá hablo con el backend (fs2-api) para el catálogo.
 // La lista oficial de productos vive en la base del backend y llega por
 // GET /api/productos (el seed la carga la primera vez que arranca el backend).
-import { baseApi, ApiError, headersApi } from "./api";
+import { baseApi, ApiError, headersApi, envolverErrorRed } from "./api";
 import type { Producto } from "../data/productos";
 
 const URL_PRODUCTOS = `${baseApi()}/productos`;
 
 // devuelve la lista completa de productos del backend (lanza ApiError si falla)
 export const listarProductos = async (): Promise<Producto[]> => {
-  const respuesta = await fetch(URL_PRODUCTOS, { headers: headersApi() });
+  const respuesta = await fetch(URL_PRODUCTOS, { headers: headersApi() }).catch(envolverErrorRed);
   let cuerpo: { success?: boolean; data?: unknown } | null = null;
   const tipo: unknown = await respuesta.json().catch(() => null);
   cuerpo = tipo as { success?: boolean; data?: unknown } | null;

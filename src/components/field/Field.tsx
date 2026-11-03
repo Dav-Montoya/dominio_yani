@@ -31,6 +31,12 @@ const Field = ({
 }: FieldProps) => {
   // acá guardo si el campo está seleccionado, para mostrar la ayuda solo en ese momento
   const [enfocado, setEnfocado] = useState(false);
+  // para los campos de contraseña (type="password"): el ojito 👁/🙈 alterna entre
+  // ocultar los puntos y mostrar el texto completo (mejora de legibilidad que pidió
+  // la usuaria: revisar lo que se escribió antes de enviar)
+  const [contrasenaVisible, setContrasenaVisible] = useState(false);
+  const esContrasena = type === "password";
+  const tipoReal = esContrasena && contrasenaVisible ? "text" : type;
 
   // estas propiedades son iguales para input, textarea y select, por eso las junto
   const comunes = {
@@ -71,6 +77,27 @@ const Field = ({
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
         />
+      ) : esContrasena ? (
+        // input de contraseña con el ojito de "mostrar/ocultar" al lado
+        <div className="relative">
+          <input
+            {...comunes}
+            type={tipoReal}
+            maxLength={maxLength}
+            placeholder={placeholder}
+            autoComplete={autoComplete}
+            className={`${comunes.className} pr-11`}
+            onChange={(e) => onChange(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setContrasenaVisible((v) => !v)}
+            aria-label={contrasenaVisible ? "Ocultar contraseña" : "Mostrar contraseña"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full px-1.5 py-0.5 text-lg leading-none text-ciruela/70 hover:bg-rose-50"
+          >
+            {contrasenaVisible ? "🙈" : "👁"}
+          </button>
+        </div>
       ) : (
         <input
           {...comunes}

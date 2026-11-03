@@ -156,10 +156,21 @@ const encabezados = (): HeadersInit => {
 
 export const headersApi = encabezados;
 
+// cuando el navegador no logra enviar la nada (sin internet, servidor caído,
+// api gateway sin ruta...) fetch lanza su error crudo "Failed to fetch" en
+// inglés. Acá lo traduzco una única vez a el único mensaje amigable de la tienda,
+// y todas las funciones de servicios lo usan para no mostrar texto técnico.
+export const envolverErrorRed = (): never => {
+  throw new ApiError(
+    "SIN_CONEXION",
+    "No pudimos comunicarnos con la tienda. Revisa tu acceso a internet o inténtalo en un momento.",
+  );
+};
+
 // función central: todas las llamadas pasan por acá, así reviso los errores una sola vez
 // (en la rama original, register() no revisaba si la respuesta venía con error)
 const pedir = async <T,>(ruta: string, init: RequestInit = {}): Promise<T> => {
-  const respuesta = await fetch(`${BASE}${ruta}`, { ...init, headers: encabezados() });
+  const respuesta = await fetch(`${BASE}${ruta}`, { ...init, headers: encabezados() }).catch(envolverErrorRed);
   let cuerpo: RespuestaApi<T> | null = null;
   try {
     cuerpo = (await respuesta.json()) as RespuestaApi<T>;
@@ -290,7 +301,7 @@ const api = {
   // me dice si el servidor responde (/health). OJO: solo prueba que el servidor está vivo, no que la sesión sea válida
   async estaDisponible(): Promise<boolean> {
     try {
-      const respuesta = await fetch(`${BASE}/health`, { headers: encabezados() });
+      const respuesta = await fetch(`${BASE}/health`, { headers: encabezados() }).catch(envolverErrorRed);
       return respuesta.ok;
     } catch {
       return false;
